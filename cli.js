@@ -2,26 +2,26 @@
 
 'use strict'
 
-const meow = require('meow')
 const chalk = require('chalk')
 const get = require('lodash/fp/get')
 const map = require('lodash/fp/map')
+const meow = require('meow')
 
 const count = 0
 
 const cli = meow(
   {
-    help: [
-      'Usage',
-      '  $ copy-github-labels -t <token> <source-repo> <destination-repo>',
-      '',
-      'Options',
-      "  -d           Dry run, don't actually copy anything",
-      '  -t, --token  Token to authenticate with GitHub API',
-      '',
-      'Examples',
-      '  $ copy-github-labels -t token jvandemo/source-repo jvandemo/destination-repo',
-    ],
+    help: `
+      Usage
+        $ copy-github-labels -t <token> <source-repo> <destination-repo>
+
+      Options
+        -d           Dry run, dont actually copy anything
+        -t, --token  Token to authenticate with GitHub API
+
+      Examples
+        $ copy-github-labels -t token jvandemo/source-repo jvandemo/destination-repo
+    `,
   },
   {
     boolean: ['d'],
