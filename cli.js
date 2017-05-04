@@ -2,12 +2,16 @@
 
 'use strict'
 
+require('dotenv').config()
+
 const chalk = require('chalk')
+const co = require('co')
 const get = require('lodash/fp/get')
 const map = require('lodash/fp/map')
 const meow = require('meow')
 
-const count = 0
+// const count = 0
+/* eslint-disable no-console */
 
 const cli = meow(
   {
@@ -18,18 +22,21 @@ const cli = meow(
       Options
         -d           Dry run, dont actually copy anything
         -t, --token  Token to authenticate with GitHub API
+        -f           Delete all labels from destination repo first
 
       Examples
         $ copy-github-labels -t token jvandemo/source-repo jvandemo/destination-repo
     `,
   },
   {
-    boolean: ['d'],
+    boolean: ['d', 'f'],
     alias: {
       t: 'token',
     },
   }
 )
+
+cli.flags.token = cli.flags.token ? cli.flags.token : process.env['COPY_GITHUB_LABELS_TOKEN']
 
 if (!cli.flags.token) {
   cli.showHelp(1)
@@ -42,19 +49,17 @@ if (cli.input.length < 2) {
 const source = cli.input[0]
 const destination = cli.input[1]
 
-console.log({ source, destination })
+const dryRun = cli.flags.d
+const deleteFirst = cli.flags.f
 
-const options = {
-  dryRun: cli.flags.d,
-}
-const copyGitHubLabels = require('./index')(options)
+const copyGitHubLabels = require('./index')()
 
 copyGitHubLabels.authenticate({
   type: 'token',
   token: cli.flags.token,
 })
 
-if (cli.flags.d) {
+if (dryRun) {
   console.log(chalk.yellow('Dry run, no labels are copied for real:'))
 }
 
@@ -78,13 +83,21 @@ if (cli.flags.d) {
  * }
  */
 
-copyGitHubLabels.deleteAllLabels({ repo: destination }).then(labels => {
-  console.log(labels.join("\n"))
+const main = co.wrap(function* () {
+  if (deleteFirst) {
+    console.log(`Deleting labels from ${destination}`)
+    yield copyGitHubLabels.deleteAllLabels({ repo: destination, dryRun }).then(labels => {
+      console.log(map(get('name'))(labels).join('\n'))
+    })
+  }
+
+  console.log(`Copying labels from ${source} to ${destination}`)
+  yield copyGitHubLabels.copy({ source, destination, dryRun }).then(labels => {
+    console.log(map(get('name'))(labels).join('\n'))
+  })
 })
 
-copyGitHubLabels.copy({ source, destination }).then(labels => {
-  console.log(map(get('name'))(labels).join("\n"))
-})
+main()
 
 // , function(err, label) {
 //   const error = JSON.parse(err)
