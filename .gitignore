@@ -30,3 +30,8 @@ node_modules
 .idea
 
 .env*
+
+
+# Yarn 2 stuff
+.yarn
+.pnp.*
